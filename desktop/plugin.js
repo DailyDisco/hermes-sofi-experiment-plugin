@@ -34,6 +34,62 @@ function Freshness({ iso }) {
   })
 }
 
+const KIND_STYLES = {
+  stop: { variant: 'destructive', label: 'SELL' },
+  trim: { variant: 'default', label: 'TRIM' },
+  candidate: { variant: 'secondary', label: 'CASH' },
+  info: { variant: 'outline', label: 'INFO' }
+}
+
+function Actions({ rows }) {
+  if (!rows || !rows.length) return jsxs('div', { className: 'rounded-md border border-(--ui-stroke-secondary) p-3 text-sm text-(--ui-text-tertiary)', children: [
+    '✓ No actions required. All rules quiet.'
+  ] })
+  return jsx('div', { className: 'flex flex-col gap-2', children: rows.map((a, i) => {
+    const s = KIND_STYLES[a.kind] || KIND_STYLES.info
+    return jsxs('div', { className: 'flex items-center gap-3 rounded-md border border-(--ui-stroke-secondary) p-3', children: [
+      jsx(Badge, { variant: s.variant, children: (s.label + (a.ticker ? ' ' + a.ticker : '')) }),
+      jsx('div', { className: 'min-w-0 flex-1 text-sm', children: [
+        jsx('span', { className: 'font-medium', children: a.action }),
+        ' ',
+        jsx('span', { className: 'text-(--ui-text-tertiary)', children: a.detail })
+      ] }),
+      a.ticker && jsx(Button, { size: 'sm', variant: 'ghost', onClick: () => host.navigate('/sofi'), children: 'Mark done' })
+    ] }, i)
+  }) })
+}
+
+function NextDeposit({ dep }) {
+  if (!dep) return null
+  const target = new Date(dep.date).getTime()
+  const hrs = Math.max(0, (target - Date.now()) / 3.6e6)
+  const label = hrs < 48 ? `${Math.round(hrs)}h` : `${Math.round(hrs / 24)}d`
+  return jsx(Badge, { variant: 'secondary', children: `next $${dep.amount} deposit in ${label}` })
+}
+
+function VerdictTape({ snapshots }) {
+  if (!snapshots || snapshots.length < 2) return null
+  const w = 560, h = 120, pad = 6
+  const vals = snapshots.flatMap(s => [s.equity.D, s.equity.B]).filter(v => v > 0)
+  const min = Math.min(...vals), max = Math.max(...vals)
+  const x = i => pad + i * (w - 2 * pad) / (snapshots.length - 1)
+  const y = v => pad + (1 - (v - min) / (max - min || 1)) * (h - 2 * pad)
+  const path = k => snapshots.map((s, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(s.equity[k]).toFixed(1)}`).join(' ')
+  const qy = v => pad + (1 - (v - min) / (max - min || 1)) * (h - 2 * pad)
+  const qPath = snapshots.map((s, i) => s.qqqm_px ? `${i ? 'L' : 'M'}${x(i).toFixed(1)},${qy(s.qqqm_px).toFixed(1)}` : '').filter(Boolean).join(' ')
+  return jsxs('div', { className: 'rounded-md border border-(--ui-stroke-secondary) p-3', children: [
+    jsx('div', { className: 'mb-2 text-xs uppercase tracking-wide text-(--ui-text-tertiary)', children: 'Equity since inception (Oct 4)' }),
+    jsxs('svg', { viewBox: `0 0 ${w} ${h}`, className: 'w-full', style: { height: h }, children: [
+      jsx('path', { d: path('D'), fill: 'none', strokeWidth: 2, stroke: getComputedStyle(document.body).getPropertyValue('--ui-accent') || '#888' }),
+      jsx('path', { d: qPath, fill: 'none', strokeWidth: 1.5, strokeDasharray: '4 3', stroke: getComputedStyle(document.body).getPropertyValue('--ui-text-tertiary') || '#666' })
+    ] }),
+    jsxs('div', { className: 'mt-1 flex gap-4 text-xs text-(--ui-text-tertiary)', children: [
+      jsxs('span', { children: ['— D & B'] }),
+      jsxs('span', { children: ['-- QQQM shadow'] })
+    ] })
+  ] })
+}
+
 function Scoreboard({ exp }) {
   if (!exp || exp.error) return jsx('div', { className: 'text-sm text-(--ui-text-tertiary)', children: 'experiment: ' + (exp && exp.error ? exp.error : 'loading') })
   const d = exp.books.D
@@ -109,12 +165,18 @@ function Board() {
   const exp = data.experiment || {}
   return jsxs('div', { className: 'flex h-full flex-col gap-4 overflow-auto p-4 text-sm', children: [
     jsxs('div', { className: 'flex items-center gap-3', children: [
-      jsx('div', { className: 'text-lg font-semibold', children: 'SoFi Experiment' }),
+      jsx('div', { className: 'text-lg font-semibold', children: 'SoFi Command Center' }),
       jsx(Freshness, { iso: data.generated_at }),
+      jsx(NextDeposit, { dep: data.next_deposit }),
       jsx('div', { className: 'ml-auto flex items-center gap-2 text-xs text-(--ui-text-tertiary)', children: 'account ' + money(data.account_value) + ' · cash ' + money(data.cash) }),
       jsx(Button, { size: 'sm', variant: 'ghost', onClick: () => refetch(), children: 'Refresh' })
     ] }),
+    jsxs('section', { className: 'flex flex-col gap-2', children: [
+      jsx('div', { className: 'text-xs uppercase tracking-wide text-(--ui-text-tertiary)', children: 'What to do now' }),
+      jsx(Actions, { rows: data.actions })
+    ] }),
     jsx(Scoreboard, { exp }),
+    jsx(VerdictTape, { snapshots: exp.snapshots }),
     jsx(Positions, { rows: data.positions }),
     jsxs('div', { className: 'flex gap-6', children: [
       jsx(TradeList, { title: 'Book D — Diego guided', trades: exp.books && exp.books.D && exp.books.D.trades }),
