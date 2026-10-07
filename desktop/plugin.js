@@ -133,7 +133,7 @@ function Scorecard({ rows }) {
   ] })
 }
 
-function Positions({ rows }) {
+function Positions({ rows, tech }) {
   if (!rows || !rows.length) return jsx('div', { className: 'text-sm text-(--ui-text-tertiary)', children: 'no positions' })
   const head = ['ticker', 'weight', 'value', 'price', 'basis', 'stop', 'trim', 'trend', 'rsi', 'status']
   return jsxs('table', { className: 'w-full text-xs', children: [
@@ -152,8 +152,8 @@ function Positions({ rows }) {
       jsx('td', { className: 'py-1 pr-3 text-(--ui-text-tertiary)', children: p.basis ? money(p.basis) : 'unknown' }),
       jsx('td', { className: 'py-1 pr-3 text-(--ui-text-tertiary)', children: money(p.stop_px) }),
       jsx('td', { className: 'py-1 pr-3 text-(--ui-text-tertiary)', children: money(p.trim_px) }),
-      techCell(p.ticker, 'trend', TECH),
-      techCell(p.ticker, 'rsi14', TECH),
+      techCell(p.ticker, 'trend', tech),
+      techCell(p.ticker, 'rsi14', tech),
       jsx('td', { className: 'py-1', children: p.status === 'ok' ? jsx('span', { className: 'text-(--ui-text-tertiary)', children: 'ok' }) : jsx(Badge, { variant: 'destructive', children: p.status.toUpperCase() }) })
     ] }, p.ticker)) })
   ] })
@@ -231,7 +231,7 @@ function Board() {
     jsx(Scoreboard, { exp }),
     jsx(VerdictTape, { snapshots: exp.snapshots }),
     jsx(Scorecard, { rows: data.decision_scores }),
-    jsx(Positions, { rows: data.positions }),
+    jsx(Positions, { rows: data.positions, tech: TECH }),
     jsx(NewsFeed, { rows: data.news_feed }),
     jsxs('div', { className: 'flex gap-6', children: [
       jsx(TradeList, { title: 'Book D — Diego guided', trades: exp.books && exp.books.D && exp.books.D.trades }),
