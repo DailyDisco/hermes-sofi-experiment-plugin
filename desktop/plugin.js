@@ -85,13 +85,16 @@ function Positions({ rows }) {
 
 function TradeList({ title, trades }) {
   const rows = trades || []
+  const items = rows.slice().reverse().map((t, i) => jsxs('li', { children: [
+    jsx('span', { className: 'text-(--ui-text-tertiary)', children: t.date + ' ' }),
+    t.side, ' ', jsx('span', { className: 'font-medium', children: t.ticker }),
+    ' ', money(t.price), ' × ', t.shares
+  ] }, i))
   return jsxs('div', { className: 'flex min-w-0 flex-1 flex-col gap-1', children: [
     jsx('div', { className: 'text-xs uppercase tracking-wide text-(--ui-text-tertiary)', children: title }),
-    rows.length ? jsx('ul', { className: 'flex flex-col gap-0.5 text-xs', children: rows.slice().reverse().map((t, i) => jsxs('li', { className: 'truncate', children: [
-      jsx('span', { className: 'text-(--ui-text-tertiary)', children: t.date + ' ' }),
-      t.side, ' ', jsx('span', { className: 'font-medium', children: t.ticker }),
-      ' ', money(t.price), ' × ', t.shares
-    ] }, i) }) }) : jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: 'none yet' })
+    items.length
+      ? jsx('ul', { className: 'flex flex-col gap-0.5 text-xs', children: items })
+      : jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: 'none yet' })
   ] })
 }
 
@@ -121,7 +124,7 @@ function Board() {
       jsx('div', { className: 'text-xs uppercase tracking-wide text-(--ui-text-tertiary)', children: 'Upcoming events' }),
       jsx('ul', { className: 'text-xs', children: data.events.map((e, i) => jsxs('li', { children: [
         jsx('span', { className: 'text-(--ui-text-tertiary)', children: e.date + ' ' }), e.ticker, ': ', e.event
-      ] }, i) }) })
+      ] }, i)) })
     ] }) : null
   ] })
 }
