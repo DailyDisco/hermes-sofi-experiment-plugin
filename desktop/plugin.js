@@ -115,6 +115,24 @@ function Scoreboard({ exp }) {
   ] })
 }
 
+function Scorecard({ rows }) {
+  if (!rows || !rows.length) return null
+  const total = rows.reduce((acc, r) => acc + (r.excess ?? 0), 0)
+  return jsxs('div', { className: 'rounded-md border border-(--ui-stroke-secondary) p-3', children: [
+    jsxs('div', { className: 'mb-2 flex items-baseline gap-3', children: [
+      jsx('div', { className: 'text-xs uppercase tracking-wide text-(--ui-text-tertiary)', children: 'Decision scorecard (me vs QQQM)' }),
+      jsx('span', { className: 'text-xs ' + retClass(total), children: (total >= 0 ? '+' : '') + total.toFixed(2) + ' pts total' })
+    ] }),
+    jsx('ul', { className: 'flex flex-col gap-1 text-xs', children: rows.map(r => jsxs('li', { className: 'flex items-center gap-2', children: [
+      jsx('span', { className: 'text-(--ui-text-tertiary)', children: r.date }),
+      jsx('span', { className: 'font-medium', children: r.side }),
+      jsx('span', { children: r.ticker }),
+      jsx('span', { className: retClass(r.excess), children: r.excess != null ? (r.excess >= 0 ? '+' : '') + r.excess.toFixed(2) + ' pts' : 'no data' }),
+      jsx('span', { className: 'text-(--ui-text-tertiary)', children: r.status })
+    ] }, r.id)) })
+  ] })
+}
+
 function Positions({ rows }) {
   if (!rows || !rows.length) return jsx('div', { className: 'text-sm text-(--ui-text-tertiary)', children: 'no positions' })
   const head = ['ticker', 'weight', 'value', 'price', 'basis', 'stop', 'trim', 'status']
@@ -177,6 +195,7 @@ function Board() {
     ] }),
     jsx(Scoreboard, { exp }),
     jsx(VerdictTape, { snapshots: exp.snapshots }),
+    jsx(Scorecard, { rows: data.decision_scores }),
     jsx(Positions, { rows: data.positions }),
     jsxs('div', { className: 'flex gap-6', children: [
       jsx(TradeList, { title: 'Book D — Diego guided', trades: exp.books && exp.books.D && exp.books.D.trades }),
