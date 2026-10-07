@@ -135,7 +135,7 @@ function Scorecard({ rows }) {
 
 function Positions({ rows }) {
   if (!rows || !rows.length) return jsx('div', { className: 'text-sm text-(--ui-text-tertiary)', children: 'no positions' })
-  const head = ['ticker', 'weight', 'value', 'price', 'basis', 'stop', 'trim', 'status']
+  const head = ['ticker', 'weight', 'value', 'price', 'basis', 'stop', 'trim', 'trend', 'rsi', 'status']
   return jsxs('table', { className: 'w-full text-xs', children: [
     jsx('thead', { children: jsx('tr', { className: 'text-left text-(--ui-text-tertiary)', children: head.map(h => jsx('th', { className: 'py-1 pr-3 font-medium', children: h }, h)) }) }),
     jsx('tbody', { children: rows.map(p => jsxs('tr', { className: 'border-t border-(--ui-stroke-secondary)', children: [
@@ -152,9 +152,15 @@ function Positions({ rows }) {
       jsx('td', { className: 'py-1 pr-3 text-(--ui-text-tertiary)', children: p.basis ? money(p.basis) : 'unknown' }),
       jsx('td', { className: 'py-1 pr-3 text-(--ui-text-tertiary)', children: money(p.stop_px) }),
       jsx('td', { className: 'py-1 pr-3 text-(--ui-text-tertiary)', children: money(p.trim_px) }),
+      techCell(p.ticker, 'trend'),
+      techCell(p.ticker, 'rsi14'),
       jsx('td', { className: 'py-1', children: p.status === 'ok' ? jsx('span', { className: 'text-(--ui-text-tertiary)', children: 'ok' }) : jsx(Badge, { variant: 'destructive', children: p.status.toUpperCase() }) })
     ] }, p.ticker)) })
   ] })
+}
+
+function techCell(ticker, key) {
+  return jsx('td', { className: 'py-1 pr-3 text-(--ui-text-tertiary)', children: (TECH[ticker] || {})[key] != null ? String((TECH[ticker] || {})[key]) : '—' })
 }
 
 function TradeList({ title, trades }) {
@@ -208,6 +214,7 @@ function Board() {
     jsx(Button, { size: 'sm', onClick: () => refetch(), children: 'Retry' })
   ] })
   const exp = data.experiment || {}
+  const TECH = data.technicals || {}
   return jsxs('div', { className: 'flex h-full flex-col gap-4 overflow-auto p-4 text-sm', children: [
     jsxs('div', { className: 'flex items-center gap-3', children: [
       jsx('div', { className: 'text-lg font-semibold', children: 'SoFi Command Center' }),
