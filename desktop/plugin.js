@@ -152,15 +152,16 @@ function Positions({ rows }) {
       jsx('td', { className: 'py-1 pr-3 text-(--ui-text-tertiary)', children: p.basis ? money(p.basis) : 'unknown' }),
       jsx('td', { className: 'py-1 pr-3 text-(--ui-text-tertiary)', children: money(p.stop_px) }),
       jsx('td', { className: 'py-1 pr-3 text-(--ui-text-tertiary)', children: money(p.trim_px) }),
-      techCell(p.ticker, 'trend'),
-      techCell(p.ticker, 'rsi14'),
+      techCell(p.ticker, 'trend', TECH),
+      techCell(p.ticker, 'rsi14', TECH),
       jsx('td', { className: 'py-1', children: p.status === 'ok' ? jsx('span', { className: 'text-(--ui-text-tertiary)', children: 'ok' }) : jsx(Badge, { variant: 'destructive', children: p.status.toUpperCase() }) })
     ] }, p.ticker)) })
   ] })
 }
 
-function techCell(ticker, key) {
-  return jsx('td', { className: 'py-1 pr-3 text-(--ui-text-tertiary)', children: (TECH[ticker] || {})[key] != null ? String((TECH[ticker] || {})[key]) : '—' })
+function techCell(ticker, key, tech) {
+  const row = (tech || {})[ticker] || {}
+  return jsx('td', { className: 'py-1 pr-3 text-(--ui-text-tertiary)', children: row[key] != null ? String(row[key]) : '—' })
 }
 
 function TradeList({ title, trades }) {
