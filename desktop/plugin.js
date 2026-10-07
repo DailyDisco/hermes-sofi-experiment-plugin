@@ -159,16 +159,43 @@ function Positions({ rows }) {
 
 function TradeList({ title, trades }) {
   const rows = trades || []
-  const items = rows.slice().reverse().map((t, i) => jsxs('li', { children: [
-    jsx('span', { className: 'text-(--ui-text-tertiary)', children: t.date + ' ' }),
-    t.side, ' ', jsx('span', { className: 'font-medium', children: t.ticker }),
-    ' ', money(t.price), ' × ', t.shares
+  const items = rows.slice().reverse().map((t, i) => jsxs('li', { className: 'flex flex-col gap-0.5', children: [
+    jsxs('div', { children: [
+      jsx('span', { className: 'text-(--ui-text-tertiary)', children: t.date + ' ' }),
+      t.side, ' ', jsx('span', { className: 'font-medium', children: t.ticker }),
+      ' ', money(t.price), ' × ', t.shares
+    ] }),
+    t.rationale && jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: t.rationale })
   ] }, i))
   return jsxs('div', { className: 'flex min-w-0 flex-1 flex-col gap-1', children: [
     jsx('div', { className: 'text-xs uppercase tracking-wide text-(--ui-text-tertiary)', children: title }),
     items.length
-      ? jsx('ul', { className: 'flex flex-col gap-0.5 text-xs', children: items })
+      ? jsx('ul', { className: 'flex flex-col gap-2 text-xs', children: items })
       : jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: 'none yet' })
+  ] })
+}
+
+function NewsFeed({ rows }) {
+  if (!rows || !rows.length) return null
+  const byTicker = {}
+  for (const r of rows) (byTicker[r.ticker] = byTicker[r.ticker] || []).push(r)
+  return jsxs('div', { className: 'flex flex-col gap-2', children: [
+    jsx('div', { className: 'text-xs uppercase tracking-wide text-(--ui-text-tertiary)', children: 'News driving the calls' }),
+    Object.entries(byTicker).map(([ticker, items]) => jsxs('div', { className: 'rounded-md border border-(--ui-stroke-secondary) p-3', children: [
+      jsxs('div', { className: 'flex items-center gap-2', children: [
+        jsx('span', { className: 'text-sm font-medium', children: ticker }),
+        items[0].tone && jsx(Badge, {
+          variant: items[0].tone === 'POSITIVE' ? 'default' : items[0].tone === 'NEGATIVE' ? 'destructive' : 'secondary',
+          children: items[0].tone
+        })
+      ] }),
+      jsx('ul', { className: 'mt-1 flex flex-col gap-1 text-xs text-(--ui-text-secondary)', children: items.map((h, i) => jsxs('li', { children: [
+        h.date && jsx('span', { className: 'text-(--ui-text-tertiary)', children: h.date.slice(0, 10) + ' · ' }),
+        h.publisher && jsx('span', { children: h.publisher + ' · ' }),
+        jsx('span', { children: h.title }),
+        h.events && jsx('span', { className: 'text-(--ui-accent)', children: ' [' + h.events + ']' })
+      ] }, i)) })
+    ] }, ticker))
   ] })
 }
 
@@ -197,6 +224,7 @@ function Board() {
     jsx(VerdictTape, { snapshots: exp.snapshots }),
     jsx(Scorecard, { rows: data.decision_scores }),
     jsx(Positions, { rows: data.positions }),
+    jsx(NewsFeed, { rows: data.news_feed }),
     jsxs('div', { className: 'flex gap-6', children: [
       jsx(TradeList, { title: 'Book D — Diego guided', trades: exp.books && exp.books.D && exp.books.D.trades }),
       jsx(TradeList, { title: 'Book B — Bot rules', trades: exp.books && exp.books.B && exp.books.B.trades })
